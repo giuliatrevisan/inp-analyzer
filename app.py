@@ -16,7 +16,6 @@ def estimar_rugosidade(diametro, material=None):
         return 120
     if 'amianto' in material:
         return 140
-
     if diametro <= 50:
         return 120
     elif diametro <= 150:
@@ -41,7 +40,10 @@ def preencher_rugosidade(texto_inp):
         if dentro_de_pipes and original and not original.startswith(';'):
             partes = linha.split()
             if len(partes) >= 5:
-                diametro = float(partes[4]) if partes[4].replace('.', '', 1).isdigit() else 100
+                try:
+                    diametro = float(partes[4])
+                except ValueError:
+                    diametro = 100
             else:
                 diametro = 100
 
@@ -52,7 +54,6 @@ def preencher_rugosidade(texto_inp):
                 while len(partes) < 6:
                     partes.append('')
                 partes[5] = str(rug)
-
                 linha_corrigida = '\t'.join(partes + linha.split()[len(partes):])
                 novas_linhas.append(linha_corrigida)
             else:
@@ -65,6 +66,9 @@ def preencher_rugosidade(texto_inp):
 def calcular_rugosidade(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         conteudo = f.read()
+
+    # Substituir vírgulas por pontos antes de processar
+    conteudo = conteudo.replace(',', '.')
 
     conteudo_corrigido = preencher_rugosidade(conteudo)
 
