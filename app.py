@@ -24,7 +24,7 @@ def estimar_rugosidade(diametro, material=None):
     return 100
 
 def preencher_rugosidade(texto_inp):
-    linhas = texto_inp.replace(',', '.').splitlines()  # troca vírgulas por pontos
+    linhas = texto_inp.replace(',', '.').splitlines()
     novas_linhas = []
     dentro_de_pipes = False
 
@@ -41,7 +41,6 @@ def preencher_rugosidade(texto_inp):
 
         if dentro_de_pipes and original and not original.startswith(';'):
             partes = linha.split()
-            # Garantir que tenha pelo menos os 5 primeiros campos obrigatórios
             while len(partes) < 5:
                 partes.append('0')
 
@@ -50,25 +49,20 @@ def preencher_rugosidade(texto_inp):
             except ValueError:
                 diametro = 100.0
 
-            # Rugosidade
             if len(partes) < 6 or not partes[5].replace('.', '', 1).isdigit():
                 rug = estimar_rugosidade(diametro)
                 if len(partes) < 6:
                     partes.append(str(rug))
                 else:
                     partes[5] = str(rug)
-            else:
-                rug = partes[5]
-
-            # MinorLoss
             if len(partes) < 7:
                 partes.append('0')
-
-            # Status
             if len(partes) < 8:
                 partes.append('Open')
 
-            linha_corrigida = '\t'.join(partes[:8])
+            linha_corrigida = '{:<15}\t{:<15}\t{:<15}\t{:<10}\t{:<10}\t{:<10}\t{:<10}\t{}'.format(
+                partes[0], partes[1], partes[2], partes[3], partes[4], partes[5], partes[6], partes[7]
+            )
             novas_linhas.append(linha_corrigida)
         else:
             novas_linhas.append(original)
@@ -84,7 +78,7 @@ def calcular_rugosidade(filepath):
 
     temp_path = filepath + "_corrigido.inp"
     with open(temp_path, 'w', encoding='utf-8') as f:
-        f.write(conteudo_corrigido)
+        f.write(conteudo_corrigido + '\n')  # garante \n final
 
     wn = wntr.network.WaterNetworkModel(temp_path)
     rugosidades = [
