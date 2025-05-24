@@ -24,15 +24,16 @@ def estimar_rugosidade(diametro, material=None):
     return 100
 
 def preencher_rugosidade(texto_inp):
-    linhas = texto_inp.splitlines()
+    linhas = texto_inp.replace(',', '.').splitlines()  # troca vírgulas por pontos
     novas_linhas = []
     dentro_de_pipes = False
 
     for linha in linhas:
         original = linha.strip()
+
         if original.upper().startswith('[PIPES]'):
             dentro_de_pipes = True
-            novas_linhas.append(linha)
+            novas_linhas.append(original)
             continue
 
         if dentro_de_pipes and original.startswith('['):
@@ -40,27 +41,37 @@ def preencher_rugosidade(texto_inp):
 
         if dentro_de_pipes and original and not original.startswith(';'):
             partes = linha.split()
-            if len(partes) >= 5:
-                try:
-                    diametro = float(partes[4])
-                except ValueError:
-                    diametro = 100
-            else:
-                diametro = 100
+            # Garantir que tenha pelo menos os 5 primeiros campos obrigatórios
+            while len(partes) < 5:
+                partes.append('0')
 
-            precisa_corrigir = len(partes) < 6 or not partes[5].replace('.', '', 1).isdigit()
+            try:
+                diametro = float(partes[4])
+            except ValueError:
+                diametro = 100.0
 
-            if precisa_corrigir:
+            # Rugosidade
+            if len(partes) < 6 or not partes[5].replace('.', '', 1).isdigit():
                 rug = estimar_rugosidade(diametro)
-                while len(partes) < 6:
-                    partes.append('')
-                partes[5] = str(rug)
-                linha_corrigida = '\t'.join(partes + linha.split()[len(partes):])
-                novas_linhas.append(linha_corrigida)
+                if len(partes) < 6:
+                    partes.append(str(rug))
+                else:
+                    partes[5] = str(rug)
             else:
-                novas_linhas.append(linha)
+                rug = partes[5]
+
+            # MinorLoss
+            if len(partes) < 7:
+                partes.append('0')
+
+            # Status
+            if len(partes) < 8:
+                partes.append('Open')
+
+            linha_corrigida = '\t'.join(partes[:8])
+            novas_linhas.append(linha_corrigida)
         else:
-            novas_linhas.append(linha)
+            novas_linhas.append(original)
 
     return '\n'.join(novas_linhas)
 
