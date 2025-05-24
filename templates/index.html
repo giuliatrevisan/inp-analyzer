@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Calcular Rugosidade - EPANET</title>
+</head>
+<body>
+  <h1>Upload de arquivo .INP</h1>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".inp" required>
+    <button type="submit">Calcular rugosidade</button>
+  </form>
+
+  {% if resultado %}
+    <p>✅ Rugosidade média: <strong>{{ resultado }}</strong></p>
+  {% endif %}
+
+  {% if erro %}
+    <p style="color: red;">❌ {{ erro }}</p>
+  {% endif %}
+</body>
+</html>
