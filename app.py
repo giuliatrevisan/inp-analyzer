@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template
 import os
 import wntr
+import numpy as np
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -67,9 +68,7 @@ def calcular_rugosidade(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         conteudo = f.read()
 
-    # Substituir vírgulas por pontos antes de processar
     conteudo = conteudo.replace(',', '.')
-
     conteudo_corrigido = preencher_rugosidade(conteudo)
 
     temp_path = filepath + "_corrigido.inp"
@@ -84,6 +83,35 @@ def calcular_rugosidade(filepath):
     ]
     return round(sum(rugosidades) / len(rugosidades), 2) if rugosidades else None
 
+def calcular_rugosidade_por_simulacao(filepath):
+    wn = wntr.network.WaterNetworkModel(filepath)
+    sim = wntr.sim.EpanetSimulator(wn)
+    results = sim.run_sim()
+
+    rugosidades = []
+
+    for pipe_name in wn.pipe_name_list:
+        pipe = wn.get_link(pipe_name)
+        diameter = pipe.diameter
+        length = pipe.length
+
+        flow_series = results.link['flowrate'].loc[:, pipe_name]
+        headloss_series = results.link['headloss'].loc[:, pipe_name]
+
+        flow = abs(flow_series.mean())
+        headloss = headloss_series.mean()
+
+        if all(v > 0 for v in [flow, headloss, diameter, length]):
+            try:
+                numerator = 10.67 * length * flow**1.852
+                denominator = headloss * diameter**4.87
+                C = (numerator / denominator)**(1/1.852)
+                rugosidades.append(C)
+            except:
+                continue
+
+    return round(np.mean(rugosidades), 2) if rugosidades else None
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -91,8 +119,12 @@ def index():
         if file and file.filename.endswith('.inp'):
             path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(path)
-            rug = calcular_rugosidade(path)
-            return render_template('index.html', resultado=rug)
+
+            rug_entrada = calcular_rugosidade(path)
+            rug_simulada = calcular_rugosidade_por_simulacao(path)
+
+            return render_template('index.html', resultado=rug_entrada, resultado_simulado=rug_simulada)
+
         return render_template('index.html', erro="Arquivo inválido")
     return render_template('index.html')
 
