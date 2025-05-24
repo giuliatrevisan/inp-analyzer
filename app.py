@@ -53,7 +53,6 @@ def preencher_rugosidade(texto_inp):
                     partes.append('')
                 partes[5] = str(rug)
 
-                # mantém o resto da linha (como MinorLoss e Status) se existir
                 linha_corrigida = '\t'.join(partes + linha.split()[len(partes):])
                 novas_linhas.append(linha_corrigida)
             else:
