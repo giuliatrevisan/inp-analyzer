@@ -39,15 +39,27 @@ def preencher_rugosidade(texto_inp):
             dentro_de_pipes = False
 
         if dentro_de_pipes and original and not original.startswith(';'):
-            partes = original.split()
-            if len(partes) < 6 or not partes[5].replace('.', '', 1).isdigit():
-                diametro = float(partes[4]) if len(partes) > 4 and partes[4].replace('.', '', 1).isdigit() else 100
+            partes = linha.split()
+            if len(partes) >= 5:
+                diametro = float(partes[4]) if partes[4].replace('.', '', 1).isdigit() else 100
+            else:
+                diametro = 100
+
+            precisa_corrigir = len(partes) < 6 or not partes[5].replace('.', '', 1).isdigit()
+
+            if precisa_corrigir:
                 rug = estimar_rugosidade(diametro)
                 while len(partes) < 6:
                     partes.append('')
                 partes[5] = str(rug)
-                linha = '\t'.join(partes)
-        novas_linhas.append(linha)
+
+                # mantém o resto da linha (como MinorLoss e Status) se existir
+                linha_corrigida = '\t'.join(partes + linha.split()[len(partes):])
+                novas_linhas.append(linha_corrigida)
+            else:
+                novas_linhas.append(linha)
+        else:
+            novas_linhas.append(linha)
 
     return '\n'.join(novas_linhas)
 
